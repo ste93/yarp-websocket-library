@@ -1,0 +1,33 @@
+<html>
+<head>
+<script src="../javascript/yarp-ws.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+<script> 
+
+
+function getStream() {
+    var websocket = new WebSocket("ws://localhost:10000?ws")
+    requestAddressFromPortName(websocket,"/root")
+    requestAddressFromPortName(websocket,"/read")
+
+    websocket.onmessage = logMessage
+    //var msg = createBottleFromString("bot list")
+    //sendMessage(websocket,msg)
+
+    var msg2 = createBottleFromString("bot query /root")
+    sendMessage(websocket,msg2)
+}
+</script>
+</head>
+
+
+
+<body>
+<div>
+    
+
+</div>
+</body>
+
+</html>

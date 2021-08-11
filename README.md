@@ -1,9 +1,13 @@
-at first you need to install npm
+steps required to make it working
 
-then all node dependecies with npm install (from this directory)
+- install npm
 
-after you can compile tipescript with tsc -p .
+- npm install (from this directory)
 
-then you have your javascript library in the javascript folder
+- install node-typescript
+
+- compile tipescript with tsc -p .
+
+you have your javascript library in the javascript folder
 
 
