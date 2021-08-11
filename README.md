@@ -1,13 +1,13 @@
 steps required to make it working
 
-- install npm
+- install npm (`sudo apt install npm` in ubuntu)
 
-- npm install (from this directory)
+- install node-typescript (`sudo apt install node-typescript` in ubuntu)
 
-- install node-typescript
+- `npm install` (from this directory)
 
-- compile tipescript with tsc -p .
+- compile tipescript with `tsc`
 
 you have your javascript library in the javascript folder
 
-
+otherwise you can directly import it via web by referring it with

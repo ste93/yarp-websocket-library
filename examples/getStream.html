@@ -7,16 +7,9 @@
 
 
 function getStream() {
-    var websocket = new WebSocket("ws://localhost:10000?ws")
-    requestAddressFromPortName(websocket,"/root")
-    requestAddressFromPortName(websocket,"/read")
+    var websocket = new WebSocket("ws://localhost:10000?ws") // this is the connection to yarp nameserver
+    setupNewConnectionToPort(websocket,"/root") // request connection to 
 
-    websocket.onmessage = logMessage
-    //var msg = createBottleFromString("bot list")
-    //sendMessage(websocket,msg)
-
-    var msg2 = createBottleFromString("bot query /root")
-    sendMessage(websocket,msg2)
 }
 </script>
 </head>
