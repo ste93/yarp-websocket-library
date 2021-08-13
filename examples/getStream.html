@@ -25,7 +25,8 @@ function getStreamText() {
 }
 
 function viewImage() {
-    getPortAndIp(websocket, "/grabber")
+    var websocket = new WebSocket("ws://localhost:10000?ws") // this is the connection to yarp nameserver
+    getPortAndIp(websocket, document.getElementById("portimage").value)
     .then((response) => {document.getElementById("image")
     .innerHTML = "<img src =\"http://" + response.ip + ":" + response.port + "?ac\"></img>"} )
 }
@@ -37,7 +38,7 @@ function viewImage() {
 
 <body>
 <div>
-    <input type="image" id="porttext"></input>
+    <input type="text" id="porttext"></input>
     <input type="button" onclick="getStreamText()" value="click to view text from port"></input>
     <input type="text" id="portimage"></input>
     <input type="button" onclick="viewImage()" value="click to view images from port"></input>

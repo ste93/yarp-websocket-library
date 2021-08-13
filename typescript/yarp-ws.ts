@@ -186,6 +186,7 @@ function sendData(websocket:WebSocket, message:string)
     sendMessage(websocket,createBottleFromString(message))
 }
 
+// this function parses a string and creates a bottle, each word divided by space is inserted into a different item of the list
 function createBottleFromString(data:string)
 {
     var prot = String.fromCharCode(0,0,0,0,126,0,0,1)
@@ -289,7 +290,7 @@ function parseQueryPortNameResponseFromNameserver(buffer:ArrayBuffer) {
     return {"ip": ip, "port": port}
 }
 
-
+// this function parse the response from the nameserver, and if the response is positive it establishes a new connection to receive data
 function checkIfPortExistsAndConnect(buffer:ArrayBuffer){
     var responseFromNameserver = parseQueryPortNameResponseFromNameserver(buffer)
     var ip = responseFromNameserver["ip"]
@@ -302,11 +303,13 @@ function checkIfPortExistsAndConnect(buffer:ArrayBuffer){
     return newWebsocket
 }
 
+// this function handles the response of the query request
 function handleAddressResponse(data:any){
     data.data.arrayBuffer()
     .then((buffer:ArrayBuffer) => checkIfPortExistsAndConnect(buffer))
 }
 
+// connects to yarp with the given url (TODO FIXME STE maybe it can be done only with ip and port?)
 function connectToYarp(url:string){
     var websocket = new WebSocket(url);
     return websocket
