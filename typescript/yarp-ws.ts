@@ -1,3 +1,7 @@
+
+/*
+bottle tags (same as yarp, see http://www.yarp.it/latest/Bottle_8h.html)
+*/
 enum bottleTags{
  BOTTLE_TAG_INT8 = 32,         // 0000 0000 0010 0000
  BOTTLE_TAG_INT16 = 64,        // 0000 0000 0100 0000
@@ -12,20 +16,22 @@ enum bottleTags{
  BOTTLE_TAG_DICT = 512         // 0000 0010 0000 0000
 }
 
-var websocketList: WebSocket[] =[]
+/*
+this is an interface to define a bottle item (and for the relative conversion) in the first case t
+*/
 
-interface BottleItemWithType {
+interface BottleItemWithLength {
     length: number;
     type: bottleTags|string;
     value: any[]|string|number;
 }
 
-interface BottleItemWithoutType {
+interface BottleItemWithoutLength {
     type: bottleTags|string;
     value: any[]|string|number;
 }
 
-type BottleItem = BottleItemWithoutType|BottleItemWithType;
+type BottleItem = BottleItemWithoutLength|BottleItemWithLength;
 
 interface BottleAndBytesRead{
     bytesRead: number;
@@ -35,6 +41,7 @@ interface BottleAndBytesRead{
   obj[key];
 
 
+// this function waits until the connection has been established, after 10 attempts it returns a failure
 const waitForOpenConnection = (socket:WebSocket) => {
     return new Promise<string>((resolve, reject) => {
         const maxNumberOfAttempts = 10
@@ -54,6 +61,7 @@ const waitForOpenConnection = (socket:WebSocket) => {
     })
 }
 
+// this function sends a message through a websocket, but before sending it waits the socket to be in ready state
 const sendMessage = async (socket:WebSocket, msg:string) => {
     if (socket.readyState !== socket.OPEN) {
         try {
@@ -65,7 +73,13 @@ const sendMessage = async (socket:WebSocket, msg:string) => {
     }
 }
 
-function handleBottle(dataReceived:ArrayBuffer, startingPoint:number, nested:boolean, nestedType?:bottleTags): BottleAndBytesRead
+// this function takes as input an array buffer received from the websocket, then it converts it to a bottle.
+function handleBottle(dataReceived:ArrayBuffer) {
+    return handleBottle_recursiveFunction(dataReceived, 0, false)
+}
+
+// the function must be called with startingpoint = 0 and nested =false 
+function handleBottle_recursiveFunction(dataReceived:ArrayBuffer, startingPoint:number, nested:boolean, nestedType?:bottleTags): BottleAndBytesRead
 {
     var view = new DataView(dataReceived, 0);
 
@@ -132,7 +146,7 @@ function handleBottle(dataReceived:ArrayBuffer, startingPoint:number, nested:boo
             var listItems = []
             bytesRead = bytesRead + 4
             for (var i = 0; i < listLength; i++) {
-                var item = handleBottle(dataReceived,bytesRead, false)
+                var item = handleBottle_recursiveFunction(dataReceived,bytesRead, false)
                 bytesRead = bytesRead + item.bytesRead
                 listItems.push(item.bottle)
             }
@@ -146,7 +160,7 @@ function handleBottle(dataReceived:ArrayBuffer, startingPoint:number, nested:boo
             var listItems = [];
             bytesRead = bytesRead + 4;
             for (var i = 0; i < listLength; i++) {
-                var item = handleBottle(dataReceived, bytesRead, true, bottleTags.BOTTLE_TAG_STRING);
+                var item = handleBottle_recursiveFunction(dataReceived, bytesRead, true, bottleTags.BOTTLE_TAG_STRING);
                 bytesRead = bytesRead + item.bytesRead;
                 listItems.push(item.bottle);
             }
@@ -166,6 +180,7 @@ function handleBottle(dataReceived:ArrayBuffer, startingPoint:number, nested:boo
     return {bytesRead: bytesRead -startingPoint, bottle: toReturn}
 }
 
+// this function sends the message to the websocket 
 function sendData(websocket:WebSocket, message:string)
 {
     sendMessage(websocket,createBottleFromString(message))
@@ -191,6 +206,8 @@ function createBottleFromString(data:string)
     return message
 }
 
+
+// deprecated, need to switch to view
 function createcharfromint(num:number)
 {
     var char1 = num %256
@@ -203,6 +220,7 @@ function createcharfromint(num:number)
     return String.fromCharCode(char1,char2,char3,char4)
 }
 
+// closes a connection, since the connection must be closed from the server, it sends a message to the server to close the connection
 function closeConnection(websocket:WebSocket)
 {
     var prot = String.fromCharCode(0,0,0,0,126,0,0,1)
@@ -211,6 +229,7 @@ function closeConnection(websocket:WebSocket)
     sendMessage(websocket, message)
 }
 
+// this function sends a message to the websocket to request reverting connection
 function revertConnection(websocket:WebSocket)
 {
     var prot = String.fromCharCode(0,0,0,0,126,0,0,1)
@@ -225,32 +244,32 @@ function convertArrayBufferToString(buffer:ArrayBuffer){
     return String.fromCharCode.apply(String,array)
 }
 
-
+// it prints the received object on the console
 function printBuffer(buffer:ArrayBuffer){
 
     if (buffer.byteLength > 8){
         console.log("handling bottle")
-        console.log(handleBottle(buffer,
-                                0,
-                                false))
+        console.log(handleBottle(buffer))
     } else {
         console.log("head " + convertArrayBufferToString(buffer))
         // header data0000~D01
     }
 }
 
+// the callback to log the message received from the websocket
 function logMessage(data:any){
     data.data.arrayBuffer().then((buffer:ArrayBuffer) => (printBuffer(buffer)))
 }
 
-function checkIfPortExistsAndConnect(buffer:ArrayBuffer){
-    printBuffer(buffer)
-    var response = handleBottle(buffer, 0, false)
-    if ((<any[]>getKeyValue<keyof BottleItem, BottleItem>("value")(<BottleItemWithType>response.bottle))[1]["value"][0]["value"].toString() == "error") {
+// this parse the response when a query /portname message is sent and returns the obtained ip and port
+function parseQueryPortNameResponseFromNameserver(buffer:ArrayBuffer) {
+    var response = handleBottle(buffer);
+    (<any[]>(<BottleItemWithLength>response.bottle)["value"])[1]
+    if ((<any[]>getKeyValue<keyof BottleItem, BottleItem>("value")(<BottleItemWithLength>response.bottle))[1]["value"][0]["value"].toString() == "error") {
         console.log("port does not exists")
-        return
+        return {"ip": "", "port": ""}
     }
-    var bottleItem = <any[]>getKeyValue<keyof BottleItem, BottleItem>("value")(<BottleItemWithType>response.bottle)
+    var bottleItem = <any[]>getKeyValue<keyof BottleItem, BottleItem>("value")(<BottleItemWithLength>response.bottle)
     var ip
     var port
     for (var x in bottleItem) {
@@ -265,31 +284,85 @@ function checkIfPortExistsAndConnect(buffer:ArrayBuffer){
             } else if (elementName == "port_number"){
                 port = elementValue 
             }
-
         }
     }
+    return {"ip": ip, "port": port}
+}
+
+
+function checkIfPortExistsAndConnect(buffer:ArrayBuffer){
+    var responseFromNameserver = parseQueryPortNameResponseFromNameserver(buffer)
+    var ip = responseFromNameserver["ip"]
+    var port = responseFromNameserver["port"]
     var url = "ws://" + ip + ":" + port + "?ws"
-    console.log(url)
-    connectToYarp(url);
-    (<any[]>websocketList)[websocketList.length-1].onmessage = logMessage
-    revertConnection((<any[]>websocketList)[websocketList.length-1])
+    console.log("the url to connect to is: " + url);
+    var newWebsocket = connectToYarp(url);
+    newWebsocket.onmessage = logMessage
+    revertConnection(newWebsocket)
+    return newWebsocket
 }
 
 function handleAddressResponse(data:any){
-    data.data.arrayBuffer().then((buffer:ArrayBuffer) => checkIfPortExistsAndConnect(buffer))
+    data.data.arrayBuffer()
+    .then((buffer:ArrayBuffer) => checkIfPortExistsAndConnect(buffer))
 }
-
 
 function connectToYarp(url:string){
-    var websocket = new WebSocket(url)
-    websocketList.push(websocket)
+    var websocket = new WebSocket(url);
+    return websocket
 }
 
-function setupNewConnectionToPort(websocket: WebSocket, portName: String){
-    websocket.onmessage = handleAddressResponse
+// sends a message over the websocket to request the ip and the port of portName
+function sendQueryMessage(websocket: WebSocket, portName: string){
     var msg = createBottleFromString("bot query " + portName)
     sendMessage(websocket, msg)
 }
 
+// sends a message to the websocket passed to request ip and port number of the yarp port name passed.
+// then it returns the ip and the port received.
+// if closeWebsocket = true then closes the connection to the websocket after the message is read
+function getPortAndIp(websocket: WebSocket, portName: string,  closeWebsocket:boolean =false){
+    var promise = new Promise((resolve) => {
+        var handler = function(data:any){
+            data.data.arrayBuffer()
+            .then((buffer:ArrayBuffer) => resolve(parseQueryPortNameResponseFromNameserver(buffer)))
+            if (closeWebsocket){
+                closeConnection(websocket)
+            }
+        }
+        websocket.onmessage = handler
+        sendQueryMessage(websocket, portName)
+    })
+    return promise
+}
+
+// sends a message to the websocket passed to request ip and port number of the yarp port name passed.
+// then it creates a new websocket to connect to the port.
+// if closeWebsocket = true then closes the connection to the websocket after the connection with the new port is established
+function setupNewConnectionToPort(websocket: WebSocket, portName: string, closeWebsocket:boolean =false){
+    var promise = new Promise((resolve) => {
+        var handler = function(data:any){
+            data.data.arrayBuffer()
+            .then((buffer:ArrayBuffer) => checkIfPortExistsAndConnect(buffer))
+            .then((newWebsocket: WebSocket) => {resolve(newWebsocket)})
+            if (closeWebsocket){
+                closeConnection(websocket)
+            }
+        }
+        console.log("sending message")
+        websocket.onmessage = handler
+        sendQueryMessage(websocket, portName)
+    })
+    return promise
+}
 
 
+function setupNewConnectionToPortWithAddress(rootip:string, rootport: number, portName: string){
+    var websocket = connectToYarp("ws://" +rootip + ":" + rootport+ "?ws")
+    return setupNewConnectionToPort(websocket, portName, true)
+}
+
+function getPortAndIpWithAddress(rootip:string, rootport: number, portName: string){
+    var websocket = connectToYarp("ws://" +rootip + ":" + rootport+ "?ws")
+    return getPortAndIp(websocket,portName, true)
+}

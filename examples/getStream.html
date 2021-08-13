@@ -6,11 +6,30 @@
 <script> 
 
 
-function getStream() {
+function getStreamText() {
     var websocket = new WebSocket("ws://localhost:10000?ws") // this is the connection to yarp nameserver
-    setupNewConnectionToPort(websocket,"/root") // request connection to 
-
+    setupNewConnectionToPort(websocket, document.getElementById("porttext").value)
+    .then((websocket2) => (websocket2
+                            .onmessage = function(data){ 
+                        data.data.arrayBuffer()
+                .then((buffer) => {
+                if (buffer.byteLength > 8){
+                    document.getElementById("text")
+                    .innerHTML = 
+                    handleBottle(buffer,0,false).bottle["value"][0]["value"].toString();
+            
+                console.log(handleBottle(buffer,0,false).bottle["value"][0]["value"])
+                }
+                    
+                }); logMessage(data)}))
 }
+
+function viewImage() {
+    getPortAndIp(websocket, "/grabber")
+    .then((response) => {document.getElementById("image")
+    .innerHTML = "<img src =\"http://" + response.ip + ":" + response.port + "?ac\"></img>"} )
+}
+
 </script>
 </head>
 
@@ -18,8 +37,14 @@ function getStream() {
 
 <body>
 <div>
-    
-
+    <input type="image" id="porttext"></input>
+    <input type="button" onclick="getStreamText()" value="click to view text from port"></input>
+    <input type="text" id="portimage"></input>
+    <input type="button" onclick="viewImage()" value="click to view images from port"></input>
+</div>
+<div id="image">
+</div>
+<div id="text">
 </div>
 </body>
 
