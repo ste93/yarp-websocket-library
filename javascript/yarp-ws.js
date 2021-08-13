@@ -168,6 +168,7 @@ function handleBottle_recursiveFunction(dataReceived, startingPoint, nested, nes
 function sendData(websocket, message) {
     sendMessage(websocket, createBottleFromString(message));
 }
+// this function parses a string and creates a bottle, each word divided by space is inserted into a different item of the list
 function createBottleFromString(data) {
     var prot = String.fromCharCode(0, 0, 0, 0, 126, 0, 0, 1);
     var encodedata = "d\0";
@@ -257,6 +258,7 @@ function parseQueryPortNameResponseFromNameserver(buffer) {
     }
     return { "ip": ip, "port": port };
 }
+// this function parse the response from the nameserver, and if the response is positive it establishes a new connection to receive data
 function checkIfPortExistsAndConnect(buffer) {
     var responseFromNameserver = parseQueryPortNameResponseFromNameserver(buffer);
     var ip = responseFromNameserver["ip"];
@@ -268,10 +270,12 @@ function checkIfPortExistsAndConnect(buffer) {
     revertConnection(newWebsocket);
     return newWebsocket;
 }
+// this function handles the response of the query request
 function handleAddressResponse(data) {
     data.data.arrayBuffer()
         .then((buffer) => checkIfPortExistsAndConnect(buffer));
 }
+// connects to yarp with the given url (TODO FIXME STE maybe it can be done only with ip and port?)
 function connectToYarp(url) {
     var websocket = new WebSocket(url);
     return websocket;
