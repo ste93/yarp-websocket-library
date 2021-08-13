@@ -62,7 +62,7 @@ const sendMessage = (socket, msg) => __awaiter(void 0, void 0, void 0, function*
 });
 // this function takes as input an array buffer received from the websocket, then it converts it to a bottle.
 function handleBottle(dataReceived) {
-    return handleBottle_recursiveFunction(dataReceived, 0, false);
+    return handleBottle_recursiveFunction(dataReceived, 0, false).bottle;
 }
 // the function must be called with startingpoint = 0 and nested =false 
 function handleBottle_recursiveFunction(dataReceived, startingPoint, nested, nestedType) {
@@ -231,12 +231,12 @@ function logMessage(data) {
 // this parse the response when a query /portname message is sent and returns the obtained ip and port
 function parseQueryPortNameResponseFromNameserver(buffer) {
     var response = handleBottle(buffer);
-    response.bottle["value"][1];
-    if (getKeyValue("value")(response.bottle)[1]["value"][0]["value"].toString() == "error") {
+    response["value"][1];
+    if (getKeyValue("value")(response)[1]["value"][0]["value"].toString() == "error") {
         console.log("port does not exists");
         return { "ip": "", "port": "" };
     }
-    var bottleItem = getKeyValue("value")(response.bottle);
+    var bottleItem = getKeyValue("value")(response);
     var ip;
     var port;
     for (var x in bottleItem) {

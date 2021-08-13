@@ -1,4 +1,3 @@
-
 /*
 bottle tags (same as yarp, see http://www.yarp.it/latest/Bottle_8h.html)
 */
@@ -19,7 +18,6 @@ enum bottleTags{
 /*
 this is an interface to define a bottle item (and for the relative conversion) in the first case t
 */
-
 interface BottleItemWithLength {
     length: number;
     type: bottleTags|string;
@@ -31,15 +29,14 @@ interface BottleItemWithoutLength {
     value: any[]|string|number;
 }
 
-type BottleItem = BottleItemWithoutLength|BottleItemWithLength;
-
+// this is useful for handleBottle_recursiveFunction
 interface BottleAndBytesRead{
     bytesRead: number;
     bottle: BottleItem;
 }
- const getKeyValue = <U extends keyof T, T extends object>(key: U) => (obj: T) =>
-  obj[key];
 
+type BottleItem = BottleItemWithoutLength|BottleItemWithLength;
+const getKeyValue = <U extends keyof T, T extends object>(key: U) => (obj: T) => obj[key];
 
 // this function waits until the connection has been established, after 10 attempts it returns a failure
 const waitForOpenConnection = (socket:WebSocket) => {
@@ -75,7 +72,7 @@ const sendMessage = async (socket:WebSocket, msg:string) => {
 
 // this function takes as input an array buffer received from the websocket, then it converts it to a bottle.
 function handleBottle(dataReceived:ArrayBuffer) {
-    return handleBottle_recursiveFunction(dataReceived, 0, false)
+    return handleBottle_recursiveFunction(dataReceived, 0, false).bottle
 }
 
 // the function must be called with startingpoint = 0 and nested =false 
@@ -205,7 +202,6 @@ function createBottleFromString(data:string)
     return message
 }
 
-
 // deprecated, need to switch to view
 function createcharfromint(num:number)
 {
@@ -263,12 +259,12 @@ function logMessage(data:any){
 // this parse the response when a query /portname message is sent and returns the obtained ip and port
 function parseQueryPortNameResponseFromNameserver(buffer:ArrayBuffer) {
     var response = handleBottle(buffer);
-    (<any[]>(<BottleItemWithLength>response.bottle)["value"])[1]
-    if ((<any[]>getKeyValue<keyof BottleItem, BottleItem>("value")(<BottleItemWithLength>response.bottle))[1]["value"][0]["value"].toString() == "error") {
+    (<any[]>(<BottleItemWithLength>response)["value"])[1]
+    if ((<any[]>getKeyValue<keyof BottleItem, BottleItem>("value")(<BottleItemWithLength>response))[1]["value"][0]["value"].toString() == "error") {
         console.log("port does not exists")
         return {"ip": "", "port": ""}
     }
-    var bottleItem = <any[]>getKeyValue<keyof BottleItem, BottleItem>("value")(<BottleItemWithLength>response.bottle)
+    var bottleItem = <any[]>getKeyValue<keyof BottleItem, BottleItem>("value")(<BottleItemWithLength>response)
     var ip
     var port
     for (var x in bottleItem) {
@@ -356,7 +352,6 @@ function setupNewConnectionToPort(websocket: WebSocket, portName: string, closeW
     })
     return promise
 }
-
 
 function setupNewConnectionToPortWithAddress(rootip:string, rootport: number, portName: string){
     var websocket = connectToYarp("ws://" +rootip + ":" + rootport+ "?ws")
