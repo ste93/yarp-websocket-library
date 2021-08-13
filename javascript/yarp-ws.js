@@ -77,8 +77,6 @@ function handleBottle_recursiveFunction(dataReceived, startingPoint, nested, nes
         bottleType = view.getInt32(bytesRead, true);
         bytesRead = bytesRead + 4;
     }
-    console.log("bottle type" + bottleType);
-    console.log("starting point" + startingPoint);
     switch (bottleType) {
         case bottleTags.BOTTLE_TAG_INT8:
             var numberRead = view.getInt8(bytesRead);

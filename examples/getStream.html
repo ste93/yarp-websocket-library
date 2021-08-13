@@ -42,6 +42,12 @@ function viewImage() {
     <input type="button" onclick="getStreamText()" value="click to view text from port"></input>
     <input type="text" id="portimage"></input>
     <input type="button" onclick="viewImage()" value="click to view images from port"></input>
+    <br>
+    to make this example work you need to have an image source and / or a text source
+    <br>
+    the text source can be made with <b> yarp write /write</b>
+    <br>
+    the image source can be made with <b>yarpdev --device fakeFrameGrabber</b>
 </div>
 <div id="image">
 </div>
