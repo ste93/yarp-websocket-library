@@ -185,14 +185,10 @@ function createBottleFromString(data) {
 }
 // deprecated, need to switch to view
 function createcharfromint(num) {
-    var char1 = num % 256;
-    num = num / 256;
-    var char2 = num % 256;
-    num = num / 256;
-    var char3 = num % 256;
-    num = num / 256;
-    var char4 = num % 256;
-    return String.fromCharCode(char1, char2, char3, char4);
+    var arr = new ArrayBuffer(4); // an Int32 takes 4 bytes
+    var view = new DataView(arr);
+    view.setUint32(0, num, true); // byteOffset = 0; litteEndian = true
+    return convertArrayBufferToString(arr);
 }
 // closes a connection, since the connection must be closed from the server, it sends a message to the server to close the connection
 function closeConnection(websocket) {
@@ -264,8 +260,13 @@ function checkIfPortExistsAndConnect(buffer) {
     var url = "ws://" + ip + ":" + port + "?ws";
     console.log("the url to connect to is: " + url);
     var newWebsocket = connectToYarp(url);
-    newWebsocket.onmessage = logMessage;
-    revertConnection(newWebsocket);
+    if (newWebsocket) {
+        newWebsocket.onmessage = logMessage;
+        revertConnection(newWebsocket);
+    }
+    else {
+        console.error("newWebsocket: " + url + "is undefined, check previous error");
+    }
     return newWebsocket;
 }
 // this function handles the response of the query request
@@ -275,7 +276,13 @@ function handleAddressResponse(data) {
 }
 // connects to yarp with the given url (TODO FIXME STE maybe it can be done only with ip and port?)
 function connectToYarp(url) {
-    var websocket = new WebSocket(url);
+    var websocket;
+    try {
+        websocket = new WebSocket(url);
+    }
+    catch (error) {
+        console.error("websocket client: " + url + " - " + error);
+    }
     return websocket;
 }
 // sends a message over the websocket to request the ip and the port of portName
@@ -313,7 +320,6 @@ function setupNewConnectionToPort(websocket, portName, closeWebsocket = false) {
                 closeConnection(websocket);
             }
         };
-        console.log("sending message");
         websocket.onmessage = handler;
         sendQueryMessage(websocket, portName);
     });
@@ -321,9 +327,19 @@ function setupNewConnectionToPort(websocket, portName, closeWebsocket = false) {
 }
 function setupNewConnectionToPortWithAddress(rootip, rootport, portName) {
     var websocket = connectToYarp("ws://" + rootip + ":" + rootport + "?ws");
-    return setupNewConnectionToPort(websocket, portName, true);
+    if (websocket) {
+        return setupNewConnectionToPort(websocket, portName, true);
+    }
+    else {
+        console.error("cannot connect to websocket " + portName);
+    }
 }
 function getPortAndIpWithAddress(rootip, rootport, portName) {
     var websocket = connectToYarp("ws://" + rootip + ":" + rootport + "?ws");
-    return getPortAndIp(websocket, portName, true);
+    if (websocket) {
+        return getPortAndIp(websocket, portName, true);
+    }
+    else {
+        console.error("cannot connect to websocket " + portName);
+    }
 }
